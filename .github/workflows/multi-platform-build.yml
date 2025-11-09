@@ -1,0 +1,51 @@
+name: Matrix Build with Artifacts
+
+# Trigger the workflow on push to main or manually
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    # Define the matrix strategy
+    strategy:
+      fail-fast: false
+      matrix:
+        # Define at least 3 variants using different operating systems
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    
+    # Run the job on the current matrix OS variant
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # --- REQUIRED STEP IDENTIFIER ---
+      - name: Identifier matrix-6c383f0 - Starting Build on ${{ matrix.os }}
+        run: |
+          echo "Building for matrix variant: ${{ matrix.os }}"
+          # The runner.os gives the actual OS name (e.g., Linux, Windows, macOS)
+          echo "Actual Runner OS: ${{ runner.os }}"
+
+      - name: Generate unique build artifact file
+        # This step creates a non-empty text file containing job-specific information
+        run: |
+          echo "Build Information for ${{ matrix.os }}" > build-info.txt
+          echo "-------------------------------------" >> build-info.txt
+          echo "Runner OS: ${{ runner.os }}" >> build-info.txt
+          echo "Runner Name: ${{ runner.name }}" >> build-info.txt
+          echo "Job started at: $(date +%Y-%m-%d_%H:%M:%S)" >> build-info.txt
+          echo "--- Content of artifact ---"
+          cat build-info.txt
+        shell: bash # Use bash to ensure 'date' command works consistently on all runners
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          # REQUIRED: Name the artifact with the specified prefix and variant name
+          name: build-6c383f0-${{ matrix.os }}
+          path: build-info.txt
+          # The retention-days is optional but helpful for large builds
+          retention-days: 1
